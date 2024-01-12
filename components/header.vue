@@ -3,9 +3,14 @@
     <button v-else @click="login">Login</button>
 </template>
 <script setup lang="ts">
-await new Promise(resolve => setTimeout(resolve, 200));
-const { data } = await useFetch('/api/auth', { lazy: false });
-const loggedIn = ref(data?.value?.loggedIn);
+const loggedIn: Ref<boolean | undefined> = ref(false);
+const { data } = await useFetch('/api/auth');
+watch(() => data?.value?.loggedIn, () => {
+    if (data.value) {
+        loggedIn.value = data.value?.loggedIn
+        console.log("HERE", data, loggedIn.value);
+    }
+})
 const login = async () => {
     const response = await useFetch(
         "/api/login",

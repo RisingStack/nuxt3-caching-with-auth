@@ -5,11 +5,7 @@
 <script setup lang="ts">
 const loggedIn: Ref<boolean | undefined> = ref(false);
 const { data } = await useFetch('/api/auth');
-watch(() => data?.value?.loggedIn, () => {
-    if (data.value) {
-        loggedIn.value = data.value?.loggedIn
-    }
-});
+loggedIn.value = data?.value?.loggedIn;
 console.log("COMPONENT", data.value, loggedIn.value);
 
 const login = async () => {

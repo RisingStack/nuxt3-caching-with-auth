@@ -223,7 +223,7 @@ Since this component renders user-related data we do not want to cache it.
 ### User-specific data caching
 If we look at our pages that should be cached with current set up, we can see that after we have logged in, on the page reload we again can see the "Login button".
 
-- SWR without TTL
+#### SWR without TTL
 
 The button name only updates when response changes
 
@@ -290,4 +290,31 @@ watch(() => data?.value?.loggedIn, () => {
 ```
 This way we are watching for changes in the response and are updating values of `loggedIn` variable when they are available.
 
-When we check the behaviour now, it works as expected: any page reload after updating user's logged in status will render correct values:
+When we check the behaviour now, it works as expected: any page reload after updating user's logged in status will render correct values.
+#### SWR without TTL
+
+The button name is up to date after reload. "Time in server rendered HTML" only updates when response changes
+
+<img src="readme_assets/with_client_only/swr_no_ttl.gif" width="1200"/>
+
+#### SWR with TTL
+
+The button name is up to date after reload. "Time in server rendered HTML" only updates when TTL expires
+
+**Note** Currently this functionality is not available for showcasing with Vercel deployment as button name is never updated though otherwise this rendering mode works. We opened a customer service support ticket to address the issue.
+
+<img src="readme_assets/with_client_only/swr_ttl.gif" width="1200"/>
+
+#### ISR without TTL
+
+The button name is up to date after reload. "Time in server rendered HTML" isn't updated as ISR without TTL means page is cached permanently
+
+<img src="readme_assets/with_client_only/isr_no_ttl.gif" width="1200"/>
+
+#### ISR with TTL
+
+The button name is up to date after reload. "Time in server rendered HTML" only updates when TTL expires
+
+<img src="readme_assets/with_client_only/isr_ttl.gif" width="1200"/>
+
+TODO record SWR TTL

@@ -1,7 +1,5 @@
 <template>
-    <Client-Only>
-        <Header />
-    </Client-Only>
+    <Header />
     <main class="main">
         <slot />
     </main>

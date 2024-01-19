@@ -89,10 +89,10 @@ Project has 5 pages with different rendering modes enabled:
 4. SWR without TTL
 5. SWR with TTL
 
-To learn more about rendering modes in Nuxt 3, check out our blogpost [here](link to blogpost).
+To learn more about rendering modes in Nuxt 3, check out our blogpost [here](https://blog.risingstack.com/nuxt-3-rendering-modes/).
 
 [Example of page code:](pages/spa.vue)
-```
+```vue
 <template>
     <div>
         <p>{{ pageType }} page</p>
@@ -109,7 +109,7 @@ const { data } = await useFetch('/api/hello')
 
 ### Rendering modes
 Rendering modes are set up in [nuxt.config:](nuxt.config.ts)
-```
+```javascript
 export default defineNuxtConfig({
   ssr: true,
   routeRules: {
@@ -125,7 +125,7 @@ export default defineNuxtConfig({
 For the purpose of this showcase we simply use an object to fake a db functionality.
 
 [dbFake.ts:](dbFake.ts)
-```
+```javascript
 export const users = [
   {
     id: 1,
@@ -137,14 +137,14 @@ export const users = [
 Server has 4 routes:
 #### api/hello
 Route simply returns a current date:
-```
+```javascript
 export default defineEventHandler((event) => {
   return  new Date().toUTCString();
 });
 ```
 #### api/auth
 Route returns a logged in/logged out status of the first user:
-```
+```javascript
 import { users } from "~/dbFake";
 
 export default defineEventHandler((event) => {
@@ -154,7 +154,7 @@ export default defineEventHandler((event) => {
 ```
 #### api/login
 Route updates the logged in status to `true` and returns this value:
-```
+```javascript
 import { users } from "~/dbFake";
 
 export default defineEventHandler((event) => {
@@ -164,7 +164,7 @@ export default defineEventHandler((event) => {
 ```
 #### api/logout
 Route updates the logged in status to `false` and returns this value:
-```
+```javascript
 import { users } from "~/dbFake";
 
 export default defineEventHandler((event) => {
@@ -177,7 +177,7 @@ export default defineEventHandler((event) => {
 Layout uses one header component:
 
 [header.vue:](components/header.vue)
-```
+```vue
 <template>
     <button v-if="loggedIn" @click="logout">Logout</button>
     <button v-else @click="login">Login</button>
@@ -210,7 +210,7 @@ This component simply renders "Login" button if user isn't logged in and "Logout
 Since this component renders user-related data we do not want to cache it.
 
 [Layout:](layouts/default.vue)
-```
+```vue
 <template>
     <Client-Only>
         <Header />
@@ -221,17 +221,47 @@ Since this component renders user-related data we do not want to cache it.
 </template>
 ```
 ### User-specific data caching
-If we look at one of our pages that should be cached with current set up, we can see that after we have logged in, on the page reload we again can see the "Login button":
+If we look at our pages that should be cached with current set up, we can see that after we have logged in, on the page reload we again can see the "Login button".
 
+- SWR without TTL
+
+The button name only updates when response changes
+
+<img src="readme_assets/without_client_only/swr_no_ttl.gif" width="1200"/>
+
+#### SWR with TTL
+
+The button name only updates when TTL expires
+
+**Note** Currently this functionality is not available for showcasing with Vercel deployment as button name is never updated though otherwise this rendering mode works. We opened a customer service support ticket to address the issue.
+
+<img src="readme_assets/without_client_only/swr_ttl.gif" width="1200"/>
+
+#### ISR without TTL
+
+The button name isn't updated as ISR without TTL means page is cached permanently
+
+<img src="readme_assets/without_client_only/isr_no_ttl.gif" width="1200"/>
+
+#### ISR with TTL
+
+The button name only updates when TTL expires
+
+<img src="readme_assets/without_client_only/isr_ttl.gif" width="1200"/>
+
+#### SSR
 While if we look at SSR page, it works as expected: on the first page load we can see "Login" button; after logging in and page reload we can see "Logout" button.
 
-What is causing this? This is due to the fact that both SWR and ISR rendering modes are caching the server-generated html response for the page. This means that even though the value provided by API response changes, we can still see the stale data in the browser until TTL expires.
+<img src="readme_assets/without_client_only/ssr.gif" width="1200"/>
+
+
+What is causing this? This is due to the fact that both SWR and ISR rendering modes are caching the server-generated html response for the page. This means that even though the value provided by API response changes, we can still see the stale data in the browser until TTL expires or response changes depending on rendering mode.
 
 ### Solution
 In order to prevent caching of the parts of the layout/page/component, we can wrap them in [ClientOnly](https://nuxt.com/docs/api/components/client-only) component provided by Nuxt, which ensures that particular slot is only rendered client side.
 
 Let's modify the [default layout](layouts/default.vue):
-```
+```vue
 <template>
     <Client-Only>
         <Header />
@@ -245,7 +275,7 @@ Let's modify the [default layout](layouts/default.vue):
 In addition, we need to modify the header component since useFetch used client-side does not fetch the data until hydration completes ([docs](https://nuxt.com/docs/api/composables/use-fetch#return-values)):
 
 [header.vue:](components/header.vue)
-```
+```vue
 [...]
 <script setup lang="ts">
 const loggedIn: Ref<boolean | undefined> = ref(false);

@@ -1,88 +1,10 @@
 # Nuxt 3 Caching with Authentication
-
-## Startup
-
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
-
-### Setup
-
-Make sure to install the dependencies:
-
-```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-### Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm run dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-### Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm run build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm run preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
-
 ## Story behind
-We had a project where we wanted to optimize page load times while preserving the SEO benefits. One of the techniques we used was to enable ISR (incremental static regeneration) which caches the page html response on CDN network until TTL (time to live) expires. However we also had parts of the pages that were user/specific (profile, number of items etc.) which couldn't be cached otherwise one user could have seen other user's items.
-That problem is what we want to provide solution for in our article.
+We had a project where we aimed to optimize page load times while preserving SEO benefits. One of the techniques we employed was enabling ISR (Incremental Static Regeneration), which caches the page's HTML response on the CDN network until the TTL (Time to Live) expires. However, we also encountered challenges with parts of the pages that were user-specific, such as profile data and the number of items. These components couldn't be cached, as doing so might result in one user seeing another user's items. Addressing this issue is the focus of our article
 
 ## Project setup
 ### Pages
-Project has 5 pages with different rendering modes enabled:
+The project has 5 pages with different rendering modes enabled:
 1. SSR
 2. ISR without TTL
 3. ISR with TTL
@@ -206,30 +128,35 @@ const logout = async () => {
 }
 </script>
 ```
-This component simply renders "Login" button if user isn't logged in and "Logout" button if user is logged in and has click event handler for each button. These handlers are calling respective api routes (see more [below](#server-routes)).
-Since this component renders user-related data we do not want to cache it.
+This component simply renders a 'Login' button if the user isn't logged in and a 'Logout' button if the user is logged in. It includes click event handlers for each button, and these handlers call the respective API routes.
 
 [Layout:](layouts/default.vue)
 ```vue
 <template>
-    <Client-Only>
-        <Header />
-    </Client-Only>
+    <Header />
     <main class="main">
         <slot />
     </main>
 </template>
 ```
-### User-specific data caching
-If we look at our pages that should be cached with current set up, we can see that after we have logged in, on the page reload we again can see the "Login button".
+### Startup
+Start the example project with:
+```bash
+git clone git@github.com:RisingStack/nuxt3-caching-with-auth.git
+cd nuxt3-caching-with-auth
+pnpm install
+pnpm dev
+```
+## User-specific data caching
+If we examine our pages that should be cached with the current setup, we can observe that after logging in, upon page reload, the 'Login' button is still visible.
 
-#### SWR without TTL
+### SWR without TTL
 
 The button name only updates when response changes
 
 <img src="readme_assets/without_client_only/swr_no_ttl.gif" width="1200"/>
 
-#### SWR with TTL
+### SWR with TTL
 
 The button name only updates when TTL expires
 
@@ -237,28 +164,28 @@ The button name only updates when TTL expires
 
 <img src="readme_assets/without_client_only/swr_ttl.gif" width="1200"/>
 
-#### ISR without TTL
+### ISR without TTL
 
 The button name isn't updated as ISR without TTL means page is cached permanently
 
 <img src="readme_assets/without_client_only/isr_no_ttl.gif" width="1200"/>
 
-#### ISR with TTL
+### ISR with TTL
 
 The button name only updates when TTL expires
 
 <img src="readme_assets/without_client_only/isr_ttl.gif" width="1200"/>
 
-#### SSR
-While if we look at SSR page, it works as expected: on the first page load we can see "Login" button; after logging in and page reload we can see "Logout" button.
+### SSR
+When examining the SSR page, it functions as expected: upon the initial page load, the 'Login' button is visible. After logging in and reloading the page, the 'Logout' button is displayed.
 
 <img src="readme_assets/without_client_only/ssr.gif" width="1200"/>
 
 
-What is causing this? This is due to the fact that both SWR and ISR rendering modes are caching the server-generated html response for the page. This means that even though the value provided by API response changes, we can still see the stale data in the browser until TTL expires or response changes depending on rendering mode.
+What is causing this? The issue stems from both SWR and ISR rendering modes caching the server-generated HTML response for the page. This implies that despite changes in the value provided by the API response, stale data persists in the browser until the TTL expires or the response changes, depending on the rendering mode.
 
-### Solution
-In order to prevent caching of the parts of the layout/page/component, we can wrap them in [ClientOnly](https://nuxt.com/docs/api/components/client-only) component provided by Nuxt, which ensures that particular slot is only rendered client side.
+## Solution
+To prevent caching of specific parts of the layout, page, or component, we can wrap them within the [ClientOnly](https://nuxt.com/docs/api/components/client-only) component provided by Nuxt. This ensures that the particular slot is rendered only on the client side.
 
 Let's modify the [default layout](layouts/default.vue):
 ```vue
@@ -272,7 +199,7 @@ Let's modify the [default layout](layouts/default.vue):
 </template>
 ```
 
-In addition, we need to modify the header component since useFetch used client-side does not fetch the data until hydration completes ([docs](https://nuxt.com/docs/api/composables/use-fetch#return-values)):
+In addition, we need to modify the header component as `useFetch` used client-side does not fetch the data until hydration completes ([docs](https://nuxt.com/docs/api/composables/use-fetch#return-values)):
 
 [header.vue:](components/header.vue)
 ```vue
@@ -288,34 +215,34 @@ watch(() => data?.value?.loggedIn, () => {
 [...]
 </script>
 ```
-This way we are watching for changes in the response and are updating values of `loggedIn` variable when they are available.
+This way we are watching for changes in the response and are updating values of `loggedIn` variable when they become available.
 
-When we check the behaviour now, it works as expected: any page reload after updating user's logged in status will render correct values.
-#### SWR without TTL
+Upon checking the behavior now, it works as expected: any page reload after updating the user's logged-in status will render the correct values.
+### SWR without TTL
 
-The button name is up to date after reload. "Time in server rendered HTML" only updates when response changes
+The button name is up to date after a reload. The 'Time in server-rendered HTML' only updates when the response changes.
 
 <img src="readme_assets/with_client_only/swr_no_ttl.gif" width="1200"/>
 
-#### SWR with TTL
+### SWR with TTL
 
-The button name is up to date after reload. "Time in server rendered HTML" only updates when TTL expires
+The button name is up to date after a reload. The 'Time in server-rendered HTML' only updates when the TTL expires.
 
-**Note** Currently this functionality is not available for showcasing with Vercel deployment as button name is never updated though otherwise this rendering mode works. We opened a customer service support ticket to address the issue.
+**Note** Currently, this functionality is not available for showcasing with Vercel deployment, as the button name is never updated, even though this rendering mode works otherwise. We have opened a customer service support ticket to address the issue.
 
 <img src="readme_assets/with_client_only/swr_ttl.gif" width="1200"/>
 
-#### ISR without TTL
+### ISR without TTL
 
-The button name is up to date after reload. "Time in server rendered HTML" isn't updated as ISR without TTL means page is cached permanently
+The button name is up to date after a reload. However, the 'Time in server-rendered HTML' isn't updated, as ISR without TTL means the page is cached permanently.
 
 <img src="readme_assets/with_client_only/isr_no_ttl.gif" width="1200"/>
 
-#### ISR with TTL
+### ISR with TTL
 
-The button name is up to date after reload. "Time in server rendered HTML" only updates when TTL expires
+The button name is up to date after a reload. However, the 'Time in server-rendered HTML' only updates when TTL expires.
 
 <img src="readme_assets/with_client_only/isr_ttl.gif" width="1200"/>
 
 ## Conclusion
-Using rendering mode which allows caching is great for faster load times and server costs reduction and can be used even in cases where some data on the page has to remain up-to-date or is user-specific. This can be achieved by wrapping correspondent components into <ClientOnly> component provided by Nuxt.
+Utilizing a rendering mode that allows caching is excellent for achieving faster load times and reducing server costs. It can be applied even in cases where certain data on the page needs to remain up-to-date or is user-specific. This can be accomplished by wrapping the corresponding components into the <ClientOnly> component provided by Nuxt.

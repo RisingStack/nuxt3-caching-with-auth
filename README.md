@@ -317,4 +317,5 @@ The button name is up to date after reload. "Time in server rendered HTML" only 
 
 <img src="readme_assets/with_client_only/isr_ttl.gif" width="1200"/>
 
-TODO record SWR TTL
+## Conclusion
+Using rendering mode which allows caching is great for faster load times and server costs reduction and can be used even in cases where some data on the page has to remain up-to-date or is user-specific. This can be achieved by wrapping correspondent components into <ClientOnly> component provided by Nuxt.

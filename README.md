@@ -160,7 +160,7 @@ The button name only updates when response changes
 
 The button name only updates when TTL expires
 
-**Note** Currently this functionality is not available for showcasing with Vercel deployment as button name is never updated though otherwise this rendering mode works. We opened a customer service support ticket to address the issue.
+**Note** Currently this functionality is not available for showcasing with Vercel deployment as button name is never updated though otherwise this rendering mode works. We opened a customer service support ticket and are currently in communication with Vercel Team to address the issue. 
 
 <img src="readme_assets/without_client_only/swr_ttl.gif" width="1200"/>
 
@@ -180,7 +180,6 @@ The button name only updates when TTL expires
 When examining the SSR page, it functions as expected: upon the initial page load, the 'Login' button is visible. After logging in and reloading the page, the 'Logout' button is displayed.
 
 <img src="readme_assets/without_client_only/ssr.gif" width="1200"/>
-
 
 What is causing this? The issue stems from both SWR and ISR rendering modes caching the server-generated HTML response for the page. This implies that despite changes in the value provided by the API response, stale data persists in the browser until the TTL expires or the response changes, depending on the rendering mode.
 
@@ -228,8 +227,6 @@ The button name is up to date after a reload. The 'Time in server-rendered HTML'
 
 The button name is up to date after a reload. The 'Time in server-rendered HTML' only updates when the TTL expires.
 
-**Note** Currently, this functionality is not available for showcasing with Vercel deployment, as the button name is never updated, even though this rendering mode works otherwise. We have opened a customer service support ticket to address the issue.
-
 <img src="readme_assets/with_client_only/swr_ttl.gif" width="1200"/>
 
 ### ISR without TTL
@@ -243,6 +240,11 @@ The button name is up to date after a reload. However, the 'Time in server-rende
 The button name is up to date after a reload. However, the 'Time in server-rendered HTML' only updates when TTL expires.
 
 <img src="readme_assets/with_client_only/isr_ttl.gif" width="1200"/>
+
+## Deploying the app to Vercel
+
+
+## Deploying the app to Netlify
 
 ## Conclusion
 Utilizing a rendering mode that allows caching is excellent for achieving faster load times and reducing server costs. It can be applied even in cases where certain data on the page needs to remain up-to-date or is user-specific. This can be accomplished by wrapping the corresponding components into the <ClientOnly> component provided by Nuxt.

@@ -13,7 +13,7 @@ The project has 5 pages with different rendering modes enabled:
 
 To learn more about rendering modes in Nuxt 3, check out our blogpost [here](https://blog.risingstack.com/nuxt-3-rendering-modes/).
 
-[Example of page code:](pages/spa.vue)
+[Example page code:](pages/spa.vue)
 ```vue
 <template>
     <div>
@@ -30,7 +30,7 @@ const { data } = await useFetch('/api/hello')
 ```
 
 ### Rendering modes
-Rendering modes are set up in [nuxt.config:](nuxt.config.ts)
+Rendering modes are set up in [`nuxt.config:`](nuxt.config.ts)
 ```javascript
 export default defineNuxtConfig({
   ssr: true,
@@ -60,7 +60,7 @@ export const users = [
 However, this approach only works in local development and is not suitable for deployment on platforms like Vercel or Netlify, where serverless/edge functions are employed. In such environments, the server does not run continuously. Instead, a lambda function is started and then stopped whenever there is an API request. Consequently, an object on the server side cannot preserve its state.
 
 ### Server routes
-Server has 4 routes:
+The server has 4 routes:
 #### api/hello
 Route simply returns a current date:
 ```javascript
@@ -69,7 +69,7 @@ export default defineEventHandler((event) => {
 });
 ```
 #### api/auth
-Route returns a logged in/logged out status of the first user:
+This route returns the `loggedIn` status of the first user:
 ```javascript
 import { kv } from '@vercel/kv';
 
@@ -79,7 +79,7 @@ export default defineEventHandler(async (event) => {
 });
 ```
 #### api/login
-Route updates the logged in status to `true` and returns this value:
+This route updates the `loggedIn` status to `true` and returns this value:
 ```javascript
 import { kv } from "@vercel/kv";
 
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
 });
 ```
 #### api/logout
-Route updates the logged in status to `false` and returns this value:
+Route updates the `loggedIn` status to `false` and returns this value:
 ```javascript
 import { kv } from "@vercel/kv";
 
@@ -102,7 +102,7 @@ export default defineEventHandler(async (event) => {
 ```
 
 ### Layout
-Layout uses one header component:
+We have a single layout that uses one header component:
 
 [header.vue:](components/header.vue)
 ```vue
@@ -134,7 +134,7 @@ const logout = async () => {
 }
 </script>
 ```
-This component simply renders a 'Login' button if the user isn't logged in and a 'Logout' button if the user is logged in. It includes click event handlers for each button, and these handlers call the respective API routes.
+This component simply renders a 'Login' button if the user isn't logged in and a 'Logout' button if the user is logged in. It includes click event handlers for each button, which call their respective API routes.
 
 [Layout:](layouts/default.vue)
 ```vue
@@ -161,25 +161,25 @@ If we examine our pages that should be cached with the current setup, we can obs
 
 ### SWR without TTL
 
-The button name only updates when response changes
+The button label only updates when the response changes.
 
 <img src="readme_assets/without_client_only/swr_no_ttl.gif" width="1200"/>
 
 ### SWR with TTL
 
-The button name only updates when TTL expires
+The button label only updates when the TTL expires.
 
 <img src="readme_assets/without_client_only/swr_ttl.gif" width="1200"/>
 
 ### ISR without TTL
 
-The button name isn't updated as ISR without TTL means page is cached permanently
+The button label isn't updated as ISR without TTL means the page is cached permanently.
 
 <img src="readme_assets/without_client_only/isr_no_ttl.gif" width="1200"/>
 
 ### ISR with TTL
 
-The button name only updates when TTL expires
+The button label only updates when the TTL expires.
 
 <img src="readme_assets/without_client_only/isr_ttl.gif" width="1200"/>
 
@@ -188,10 +188,10 @@ When examining the SSR page, it functions as expected: upon the initial page loa
 
 <img src="readme_assets/without_client_only/ssr.gif" width="1200"/>
 
-What is causing this? The issue stems from both SWR and ISR rendering modes caching the server-generated HTML response for the page. This implies that despite changes in the value provided by the API response, stale data persists in the browser until the TTL expires or the response changes, depending on the rendering mode.
+What is causing this? The issue stems from both the SWR and ISR rendering modes caching the server-generated HTML response for the page. This implies that despite changes in the value provided by the API response, stale data persists in the browser until the TTL expires or the response changes, depending on the rendering mode.
 
 ## Solution
-To prevent caching of specific parts of the layout, page, or component, we can wrap them within the [ClientOnly](https://nuxt.com/docs/api/components/client-only) component provided by Nuxt. This ensures that the particular slot is rendered only on the client side.
+To prevent caching of specific parts of the layout, page, or component, we can wrap them in the [ClientOnly](https://nuxt.com/docs/api/components/client-only) component provided by Nuxt. This ensures that the particular slot is rendered only on the client side.
 
 Let's modify the [default layout](layouts/default.vue):
 ```vue
@@ -221,30 +221,30 @@ watch(() => data?.value?.loggedIn, () => {
 [...]
 </script>
 ```
-This way we are watching for changes in the response and are updating values of `loggedIn` variable when they become available.
+This way, we are watching for changes in the response and are updating values of the `loggedIn` variable when they become available.
 
 Upon checking the behavior now, it works as expected: any page reload after updating the user's logged-in status will render the correct values.
 ### SWR without TTL
 
-The button name is up to date after a reload. The 'Time in server-rendered HTML' only updates when the response changes.
+The button label is up to date after a reload. The 'Time in server-rendered HTML' only updates when the response changes.
 
 <img src="readme_assets/with_client_only/swr_no_ttl.gif" width="1200"/>
 
 ### SWR with TTL
 
-The button name is up to date after a reload. The 'Time in server-rendered HTML' only updates when the TTL expires.
+The button label is up to date after a reload. The 'Time in server-rendered HTML' only updates when the TTL expires.
 
 <img src="readme_assets/with_client_only/swr_ttl.gif" width="1200"/>
 
 ### ISR without TTL
 
-The button name is up to date after a reload. However, the 'Time in server-rendered HTML' isn't updated, as ISR without TTL means the page is cached permanently.
+The button label is up to date after a reload. However, the 'Time in server-rendered HTML' isn't updated, as ISR without TTL means the page is cached permanently.
 
 <img src="readme_assets/with_client_only/isr_no_ttl.gif" width="1200"/>
 
 ### ISR with TTL
 
-The button name is up to date after a reload. However, the 'Time in server-rendered HTML' only updates when TTL expires.
+The button label is up to date after a reload. However, the 'Time in server-rendered HTML' only updates when TTL expires.
 
 <img src="readme_assets/with_client_only/isr_ttl.gif" width="1200"/>
 

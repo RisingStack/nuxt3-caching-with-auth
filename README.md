@@ -13,7 +13,7 @@ The project has 5 pages with different rendering modes enabled:
 
 To learn more about rendering modes in Nuxt 3, check out our blogpost [here](https://blog.risingstack.com/nuxt-3-rendering-modes/).
 
-[Example of page code:](pages/spa.vue)
+[Example page code:](pages/spa.vue)
 ```vue
 <template>
     <div>
@@ -30,7 +30,7 @@ const { data } = await useFetch('/api/hello')
 ```
 
 ### Rendering modes
-Rendering modes are set up in [nuxt.config:](nuxt.config.ts)
+Rendering modes are set up in [`nuxt.config:`](nuxt.config.ts)
 ```javascript
 export default defineNuxtConfig({
   ssr: true,
@@ -42,9 +42,11 @@ export default defineNuxtConfig({
   },
 });
 ```
+### Database
+For the purpose of this showcase we use [Vercel KV](https://vercel.com/docs/storage/vercel-kv) for a simple db-like functionality.
 
-### Server routes
-For the purpose of this showcase we simply use an object to fake a db functionality.
+**Note**
+Originally, we intended to use a simple object to mimic database functionality as shown in the following code snippet:
 
 [dbFake.ts:](dbFake.ts)
 ```javascript
@@ -55,8 +57,10 @@ export const users = [
   },
 ];
 ```
+However, this approach only works in local development and is not suitable for deployment on platforms like Vercel or Netlify, where serverless/edge functions are employed. In such environments, the server does not run continuously. Instead, a lambda function is started and then stopped whenever there is an API request. Consequently, an object on the server side cannot preserve its state.
 
-Server has 4 routes:
+### Server routes
+The server has 4 routes:
 #### api/hello
 Route simply returns a current date:
 ```javascript
@@ -65,38 +69,40 @@ export default defineEventHandler((event) => {
 });
 ```
 #### api/auth
-Route returns a logged in/logged out status of the first user:
+This route returns the `loggedIn` status of the first user:
 ```javascript
-import { users } from "~/dbFake";
+import { kv } from '@vercel/kv';
 
-export default defineEventHandler((event) => {
-    const loggedIn = users[0].loggedIn;
-    return { loggedIn };
-  });
+export default defineEventHandler(async (event) => {
+  const loggedIn = await kv.hget("user1", "loggedIn");
+  return { loggedIn };
+});
 ```
 #### api/login
-Route updates the logged in status to `true` and returns this value:
+This route updates the `loggedIn` status to `true` and returns this value:
 ```javascript
-import { users } from "~/dbFake";
+import { kv } from "@vercel/kv";
 
-export default defineEventHandler((event) => {
-  users[0].loggedIn = true;
-  return { loggedIn: users[0].loggedIn };
+export default defineEventHandler(async (event) => {
+  await kv.hset("user1", { loggedIn: true });
+  const loggedIn = await kv.hget("user1", "loggedIn");
+  return { loggedIn };
 });
 ```
 #### api/logout
-Route updates the logged in status to `false` and returns this value:
+Route updates the `loggedIn` status to `false` and returns this value:
 ```javascript
-import { users } from "~/dbFake";
+import { kv } from "@vercel/kv";
 
-export default defineEventHandler((event) => {
-  users[0].loggedIn = false;
-  return { loggedIn: users[0].loggedIn };
+export default defineEventHandler(async (event) => {
+  await kv.hset("user1", { loggedIn: false });
+  const loggedIn = await kv.hget("user1", "loggedIn");
+  return { loggedIn };
 });
 ```
 
 ### Layout
-Layout uses one header component:
+We have a single layout that uses one header component:
 
 [header.vue:](components/header.vue)
 ```vue
@@ -128,7 +134,7 @@ const logout = async () => {
 }
 </script>
 ```
-This component simply renders a 'Login' button if the user isn't logged in and a 'Logout' button if the user is logged in. It includes click event handlers for each button, and these handlers call the respective API routes.
+This component simply renders a 'Login' button if the user isn't logged in and a 'Logout' button if the user is logged in. It includes click event handlers for each button, which call their respective API routes.
 
 [Layout:](layouts/default.vue)
 ```vue
@@ -145,6 +151,9 @@ Start the example project with:
 git clone git@github.com:RisingStack/nuxt3-caching-with-auth.git
 cd nuxt3-caching-with-auth
 pnpm install
+```
+Create env file based on `.env.example` and start the app:
+```bash
 pnpm dev
 ```
 ## User-specific data caching
@@ -152,27 +161,25 @@ If we examine our pages that should be cached with the current setup, we can obs
 
 ### SWR without TTL
 
-The button name only updates when response changes
+The button label only updates when the response changes.
 
 <img src="readme_assets/without_client_only/swr_no_ttl.gif" width="1200"/>
 
 ### SWR with TTL
 
-The button name only updates when TTL expires
-
-**Note** Currently this functionality is not available for showcasing with Vercel deployment as button name is never updated though otherwise this rendering mode works. We opened a customer service support ticket and are currently in communication with Vercel Team to address the issue. 
+The button label only updates when the TTL expires.
 
 <img src="readme_assets/without_client_only/swr_ttl.gif" width="1200"/>
 
 ### ISR without TTL
 
-The button name isn't updated as ISR without TTL means page is cached permanently
+The button label isn't updated as ISR without TTL means the page is cached permanently.
 
 <img src="readme_assets/without_client_only/isr_no_ttl.gif" width="1200"/>
 
 ### ISR with TTL
 
-The button name only updates when TTL expires
+The button label only updates when the TTL expires.
 
 <img src="readme_assets/without_client_only/isr_ttl.gif" width="1200"/>
 
@@ -181,10 +188,10 @@ When examining the SSR page, it functions as expected: upon the initial page loa
 
 <img src="readme_assets/without_client_only/ssr.gif" width="1200"/>
 
-What is causing this? The issue stems from both SWR and ISR rendering modes caching the server-generated HTML response for the page. This implies that despite changes in the value provided by the API response, stale data persists in the browser until the TTL expires or the response changes, depending on the rendering mode.
+What is causing this? The issue stems from both the SWR and ISR rendering modes caching the server-generated HTML response for the page. This implies that despite changes in the value provided by the API response, stale data persists in the browser until the TTL expires or the response changes, depending on the rendering mode.
 
 ## Solution
-To prevent caching of specific parts of the layout, page, or component, we can wrap them within the [ClientOnly](https://nuxt.com/docs/api/components/client-only) component provided by Nuxt. This ensures that the particular slot is rendered only on the client side.
+To prevent caching of specific parts of the layout, page, or component, we can wrap them in the [ClientOnly](https://nuxt.com/docs/api/components/client-only) component provided by Nuxt. This ensures that the particular slot is rendered only on the client side.
 
 Let's modify the [default layout](layouts/default.vue):
 ```vue
@@ -214,37 +221,49 @@ watch(() => data?.value?.loggedIn, () => {
 [...]
 </script>
 ```
-This way we are watching for changes in the response and are updating values of `loggedIn` variable when they become available.
+This way, we are watching for changes in the response and are updating values of the `loggedIn` variable when they become available.
 
 Upon checking the behavior now, it works as expected: any page reload after updating the user's logged-in status will render the correct values.
 ### SWR without TTL
 
-The button name is up to date after a reload. The 'Time in server-rendered HTML' only updates when the response changes.
+The button label is up to date after a reload. The 'Time in server-rendered HTML' only updates when the response changes.
 
 <img src="readme_assets/with_client_only/swr_no_ttl.gif" width="1200"/>
 
 ### SWR with TTL
 
-The button name is up to date after a reload. The 'Time in server-rendered HTML' only updates when the TTL expires.
+The button label is up to date after a reload. The 'Time in server-rendered HTML' only updates when the TTL expires.
 
 <img src="readme_assets/with_client_only/swr_ttl.gif" width="1200"/>
 
 ### ISR without TTL
 
-The button name is up to date after a reload. However, the 'Time in server-rendered HTML' isn't updated, as ISR without TTL means the page is cached permanently.
+The button label is up to date after a reload. However, the 'Time in server-rendered HTML' isn't updated, as ISR without TTL means the page is cached permanently.
 
 <img src="readme_assets/with_client_only/isr_no_ttl.gif" width="1200"/>
 
 ### ISR with TTL
 
-The button name is up to date after a reload. However, the 'Time in server-rendered HTML' only updates when TTL expires.
+The button label is up to date after a reload. However, the 'Time in server-rendered HTML' only updates when TTL expires.
 
 <img src="readme_assets/with_client_only/isr_ttl.gif" width="1200"/>
 
-## Deploying the app to Vercel
+## Deploying the App to Vercel
 
+After importing the project to Vercel and configuring the Vercel KV storage, deployment becomes a matter of a single click (refer to the [deployment information](https://vercel.com/docs/deployments/overview) for more details).
 
-## Deploying the app to Netlify
+It's crucial to note that the SWR rendering mode only works with [edge functions](https://vercel.com/docs/frameworks/nuxt#edge-functions), while ISR functions exclusively with [serverless functions](https://vercel.com/docs/frameworks/nuxt#serverless-functions). This distinction is not clearly documented — Vercel's documentation typically encourages the use of ISR only, without acknowledging that it doesn't support revalidation based on response changes. Consequently, we've raised a service ticket for this issue and are in communication with the Vercel team.
+
+To enable edge functions, set the environment variable `NITRO_PRESET=vercel-edge`. Serverless functions are the default for deploying Nuxt projects to Vercel, so no additional configuration is required.
+
+## Deploying the App to Netlify
+
+Initially, we also planned to use Netlify for this app. However, we soon discovered that the rendering modes in Nuxt 3, which provide caching, weren't functioning correctly on Netlify. Regardless of the configuration we employed, some rendering modes didn't work as expected (for more details, refer to the [forum topic](https://answers.netlify.com/t/nuxt-3-caching-with-isr-swr-does-not-work-as-expected/110715) we opened on this issue).
+
+Following discussions with the Netlify team, they redirected us back to Nuxt for resolution. As a result, we've opened an [issue](https://github.com/nuxt/nuxt/issues/25418) on the Nuxt GitHub repository to address this matter.
 
 ## Conclusion
-Utilizing a rendering mode that allows caching is excellent for achieving faster load times and reducing server costs. It can be applied even in cases where certain data on the page needs to remain up-to-date or is user-specific. This can be accomplished by wrapping the corresponding components into the <ClientOnly> component provided by Nuxt.
+
+Opting for a rendering mode that facilitates caching is a great strategy to achieve faster load times and reduce server costs. This approach remains effective even when dealing with data on the page that requires regular updates or is user-specific. To address such scenarios, consider encapsulating the relevant components within the `<ClientOnly>` component provided by Nuxt.
+
+For seamless one-click deployments, Vercel is a preferable choice, especially at the moment. This is due to the current issue where rendering modes supporting caching do not function correctly on Netlify. As the landscape evolves, it's advisable to stay updated on platform-specific capabilities and limitations for the optimal deployment of your Nuxt app.

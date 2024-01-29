@@ -6,7 +6,6 @@
 const loggedIn: Ref<boolean | undefined> = ref(false);
 const { data } = await useFetch('/api/auth');
 loggedIn.value = data.value?.loggedIn
-console.log("COMPONENT", data.value, loggedIn.value);
 
 const login = async () => {
     const response = await useFetch(

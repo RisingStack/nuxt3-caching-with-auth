@@ -5,8 +5,11 @@
 <script setup lang="ts">
 const loggedIn: Ref<boolean | undefined> = ref(false);
 const { data } = await useFetch('/api/auth');
-loggedIn.value = data.value?.loggedIn
-
+watch(() => data?.value?.loggedIn, () => {
+    if (data.value) {
+        loggedIn.value = data.value?.loggedIn
+    }
+})
 const login = async () => {
     const response = await useFetch(
         "/api/login",
